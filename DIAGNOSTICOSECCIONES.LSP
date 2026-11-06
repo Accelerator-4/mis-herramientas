@@ -1,0 +1,22 @@
+(defun c:DiagnosticoSecciones ( / acadDoc modelSpace obj name lst count)
+  (vl-load-com)
+  (setq acadDoc (vla-get-activedocument (vlax-get-acad-object)))
+  (setq modelSpace (vla-get-modelspace acadDoc))
+  (setq lst '())
+  
+  (princ "\nEscaneando objetos en el Model Space...")
+  (vlax-for obj modelSpace
+    (setq name (vla-get-objectname obj))
+    (if (not (vl-position name lst))
+      (setq lst (cons name lst))
+    )
+  )
+  
+  (princ "\n\n--- OBJETIVOS ENCONTRADOS EN EL MODELO ---")
+  (foreach n (vl-sort lst '<)
+    (princ (strcat "\n-> " n))
+  )
+  (princ "\n------------------------------------------")
+  (princ "\nPresiona F2 para ver la lista completa en la consola.")
+  (princ)
+)

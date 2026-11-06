@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mapa &rarr; AutoCAD (DXF)</title>
+  <link rel="stylesheet" href="vendor/leaflet/leaflet.css">
+  <link rel="stylesheet" href="vendor/leaflet-draw/leaflet.draw.css">
+  <link rel="stylesheet" href="css/style.css?v=30">
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <span class="brand-mark">▰</span>
+      <div>
+        <h1>Mapa &rarr; AutoCAD <span id="appVer" class="app-ver"></span></h1>
+        <p>Selecciona un área del mapa y expórtala a DXF con coordenadas reales</p>
+      </div>
+    </div>
+    <div class="jump">
+      <label class="field" style="margin-right:8px">
+        <span style="font-size:11px">Capa base</span>
+        <select id="selTileLayer" style="min-width:160px"></select>
+      </label>
+      <input id="jumpLng" type="number" step="any" placeholder="Lon" title="Longitud">
+      <input id="jumpLat" type="number" step="any" placeholder="Lat" title="Latitud">
+      <button id="btnJump" title="Centrar el mapa en estas coordenadas">Ir</button>
+    </div>
+  </header>
+
+  <main class="layout">
+    <aside class="panel">
+      <section class="card">
+        <div class="card-head">
+          <h2>Área a exportar</h2>
+          <button id="btnZoomRect" class="ghost small">Zoom</button>
+          <button id="btnClear" class="ghost small danger" disabled>Quitar</button>
+        </div>
+        <p id="rectInfo" class="hint">Todavía no hay área. Usa el botón <span class="draw-inline">▭</span> (rectángulo) sobre el mapa para definirla.</p>
+      </section>
+
+      <section class="card grow">
+        <h2>Elementos a exportar</h2>
+        <div id="exportList"></div>
+
+        <div class="divider"></div>
+
+        <label class="field">
+          <span>Unidades del dibujo</span>
+          <select id="selUnits">
+            <option value="Meters">Metros (m)</option>
+            <option value="Centimeters">Centímetros (cm)</option>
+            <option value="Feet">Pies (ft)</option>
+            <option value="Unitless">Sin unidades</option>
+          </select>
+        </label>
+
+        <label class="field">
+          <span>Ancho de calzada de carreteras (a cada lado de la línea central)</span>
+          <input type="number" id="roadWidth" min="0.5" max="50" step="0.5" value="2"> <em class="unit-inline">metros</em>
+        </label>
+
+        <label class="check">
+          <input type="checkbox" id="chkBuildings">
+          <span>Incluir edificios (solo huellas)</span>
+        </label>
+        <label class="check">
+          <input type="checkbox" id="chkPlaces" checked>
+          <span>Incluir nombres de lugares (textos)</span>
+        </label>
+        <label class="check">
+          <input type="checkbox" id="chkPreview" checked>
+          <span>Mostrar vista previa en el mapa</span>
+        </label>
+
+        <div class="actions">
+          <button id="btnExport" class="primary">Exportar DXF</button>
+          <button id="btnDwg" class="ghost">¿DWG?</button>
+        </div>
+
+        <p id="statusLine" class="status"></p>
+        <p class="hint">Capas del DXF: <b>CARRETERAS</b> como banda alrededor de la línea central, <b>RIOS</b> (línea principal de ríos y arroyos), <b>FERROCARRILES</b>, <b>EDIFICIOS</b> y <b>NOMBRES</b> (textos de lugares). El área y su etiqueta van en la capa <b>AREA</b>. El color de cada capa se elige con los cuadros de muestra (paleta ACI, compatible con DXF R12). Todo se proyecta a UTM (zona del centro del área, datum WGS84).</p>
+      </section>
+
+      <section class="card streets-card">
+        <div class="card-head">
+          <h2>Calles Detalladas</h2>
+          <button id="btnStreetsToggle" class="ghost small">Activar</button>
+        </div>
+        <div id="streetsPanel" class="streets-panel hidden">
+          <p class="hint">Extrae ancho real, giros, medianas, andenes y ciclovías desde OSM. Se usa el mismo rectángulo del exportador.</p>
+
+          <div class="streets-loading hidden" id="streetsLoading">
+            <div class="streets-spinner"></div>
+            <span>Consultando OpenStreetMap...</span>
+          </div>
+
+          <div id="streetsSummary" class="streets-summary hidden">
+            <div class="streets-row"><span class="streets-k">Calles</span><span id="strTotal" class="streets-v">0</span></div>
+            <div class="streets-row"><span class="streets-k">Con ancho</span><span id="strWidth" class="streets-v">0%</span></div>
+            <div class="streets-row"><span class="streets-k">Con giros</span><span id="strTurns" class="streets-v">0%</span></div>
+            <div class="streets-row"><span class="streets-k">Con mediana</span><span id="strMedian" class="streets-v">0%</span></div>
+            <div class="streets-row"><span class="streets-k">Con andenes</span><span id="strSidewalk" class="streets-v">0%</span></div>
+            <div class="streets-row"><span class="streets-k">Con ciclovía</span><span id="strCycleway" class="streets-v">0%</span></div>
+            <div class="streets-row"><span class="streets-k">Rotondas</span><span id="strRound" class="streets-v">0</span></div>
+            <div class="streets-row"><span class="streets-k">Boulevards</span><span id="strBoulevard" class="streets-v">0</span></div>
+          </div>
+
+          <div class="divider"></div>
+
+          <label class="check"><input type="checkbox" id="strChkCalles" checked><span>CALLES — polígono ancho real</span></label>
+          <label class="check"><input type="checkbox" id="strChkAncho" checked><span>CALLES-ANCHO — etiqueta por tramo</span></label>
+          <label class="check"><input type="checkbox" id="strChkGiros" checked><span>CALLES-GIROS — flechas de dirección</span></label>
+          <label class="check"><input type="checkbox" id="strChkMediana" checked><span>CALLES-MEDIANA — franja central</span></label>
+          <label class="check"><input type="checkbox" id="strChkAceras" checked><span>CALLES-ACERAS — polígono andenes</span></label>
+          <label class="check"><input type="checkbox" id="strChkCiclovia" checked><span>CALLES-CICLOVIA — polígono ciclovía</span></label>
+          <label class="check"><input type="checkbox" id="strChkRotonda" checked><span>CALLES-ROTONDA — geometría rotonda</span></label>
+          <label class="check"><input type="checkbox" id="strChkBoulevard" checked><span>CALLES-BOULEVARD — outline completo</span></label>
+
+          <div class="actions">
+            <button id="btnStreetsExport" class="primary" disabled>Exportar DXF Detallado</button>
+          </div>
+          <p id="streetsStatus" class="status"></p>
+        </div>
+      </section>
+    </aside>
+
+    <div id="map"></div>
+  </main>
+
+  <div id="dwgModal" class="modal hidden">
+    <div class="modal-box">
+      <h2>Exportar a DWG</h2>
+      <p>DWG es un formato propietario de Autodesk y no existe una librería fiable para escribirlo directamente desde el navegador. Opciones:</p>
+      <ol>
+        <li><strong>Más simple:</strong> abre el <code>.dxf</code> en AutoCAD y usa el comando <code>GUARDARCOMO</code> &rarr; tipo <em>DWG</em>.</li>
+        <li><strong>Conversión por lotes (gratis):</strong> instala <em>Autodesk ODA File Converter</em> (ODA web: <code>opendesign.com</code>) y convierte DXF&harr;DWG sin AutoCAD.</li>
+        <li><strong>Web al 100% (server):</strong> convierte en tu servidor con APIs como Autodesk Platform Services o Aspose.CAD.</li>
+      </ol>
+      <button id="btnModalClose" class="primary">Entendido</button>
+    </div>
+  </div>
+
+  <script src="vendor/leaflet/leaflet.js"></script>
+  <script src="vendor/leaflet-draw/leaflet.draw.js"></script>
+  <script src="vendor/proj4/proj4.js"></script>
+  <script src="js/geom.js?v=30"></script>
+  <script src="js/dxf.js?v=30"></script>
+  <script src="js/streets.js?v=30"></script>
+  <script src="js/app.js?v=30"></script>
+</body>
+</html>

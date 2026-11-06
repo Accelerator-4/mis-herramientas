@@ -1,0 +1,298 @@
+{
+  "Uuid": "a7dcff88-31d4-4c2d-a75f-a290864c38f0",
+  "IsCustomNode": false,
+  "Description": "",
+  "Name": "CAMBIAR MASIVAMENTE LOS ESTILOS DE ALINEAMIENTOS",
+  "ElementResolver": {
+    "ResolutionMap": {}
+  },
+  "Inputs": [],
+  "Outputs": [],
+  "Nodes": [
+    {
+      "ConcreteType": "CoreNodeModels.Watch, CoreNodeModels",
+      "WatchWidth": 200.0,
+      "WatchHeight": 200.0,
+      "Id": "4f1114a3ec0742e3889136ba8f4aafec",
+      "NodeType": "ExtensionNode",
+      "Inputs": [
+        {
+          "Id": "63158c84f75744a3830454b4db2c294b",
+          "Name": "",
+          "Description": "Node to show output from",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "083f80ab7bbe4cdfaca30f65d5903410",
+          "Name": "",
+          "Description": "Node output",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Visualizes a node's output"
+    },
+    {
+      "ConcreteType": "PythonNodeModels.PythonNode, PythonNodeModels",
+      "Code": "import clr\r\nclr.AddReference('AeccDbMgd')\r\nclr.AddReference('AcDbMgd')\r\n\r\nfrom Autodesk.AutoCAD.ApplicationServices import Application\r\nfrom Autodesk.Civil.DatabaseServices import Alignment\r\nfrom Autodesk.AutoCAD.DatabaseServices import OpenMode, BlockTableRecord\r\nfrom Autodesk.Civil.ApplicationServices import CivilApplication\r\n\r\ndoc = Application.DocumentManager.MdiActiveDocument\r\ndb = doc.Database\r\ncivDoc = CivilApplication.ActiveDocument\r\n\r\nstyle_list = IN[0]\r\nselected_index = IN[1]\r\nresults = []\r\ntarget_style_id = None\r\n\r\nif style_list is None or selected_index is None:\r\n    OUT = \"Conecta los nodos correctamente\"\r\nelse:\r\n    style_name = style_list[selected_index]\r\n    with doc.LockDocument():\r\n        with db.TransactionManager.StartTransaction() as tr:\r\n            for styleId in civDoc.Styles.AlignmentStyles:\r\n                style = tr.GetObject(styleId, OpenMode.ForRead)\r\n                if style.Name == style_name:\r\n                    target_style_id = styleId\r\n                    break\r\n\r\n            if target_style_id is None:\r\n                OUT = \"Estilo no encontrado: \" + style_name\r\n            else:\r\n                bt = tr.GetObject(db.BlockTableId, OpenMode.ForRead)\r\n                btr = tr.GetObject(bt[BlockTableRecord.ModelSpace], OpenMode.ForRead)\r\n\r\n                for objId in btr:\r\n                    obj = tr.GetObject(objId, OpenMode.ForRead)\r\n                    if isinstance(obj, Alignment):\r\n                        obj.UpgradeOpen()\r\n                        obj.StyleId = target_style_id\r\n                        results.append(obj.Name)\r\n\r\n                tr.Commit()\r\n                OUT = results\r\n",
+      "Engine": "PythonNet3",
+      "VariableInputPorts": true,
+      "Id": "92ee08ab9ddf4355814fb528eb9b39f4",
+      "NodeType": "PythonScriptNode",
+      "Inputs": [
+        {
+          "Id": "506aaa89cbbc4881abe356bdf6a1206d",
+          "Name": "IN[0]",
+          "Description": "Input #0",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        },
+        {
+          "Id": "42d12e85eb50452fa01d5c271fca7541",
+          "Name": "IN[1]",
+          "Description": "Input #1",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "891d4cd17f174d97b6d0bf57e204e310",
+          "Name": "OUT",
+          "Description": "Result of the python script",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Runs an embedded Python script."
+    },
+    {
+      "ConcreteType": "PythonNodeModels.PythonNode, PythonNodeModels",
+      "Code": "import clr\r\nclr.AddReference('AeccDbMgd')\r\nclr.AddReference('AcDbMgd')\r\n\r\nfrom Autodesk.AutoCAD.ApplicationServices import Application\r\nfrom Autodesk.AutoCAD.DatabaseServices import OpenMode\r\nfrom Autodesk.Civil.ApplicationServices import CivilApplication\r\n\r\ndoc = Application.DocumentManager.MdiActiveDocument\r\ndb = doc.Database\r\ncivDoc = CivilApplication.ActiveDocument\r\n\r\nresults = []\r\n\r\nwith doc.LockDocument():\r\n    with db.TransactionManager.StartTransaction() as tr:\r\n        for styleId in civDoc.Styles.AlignmentStyles:\r\n            style = tr.GetObject(styleId, OpenMode.ForRead)\r\n            results.append(style.Name)\r\n        tr.Commit()\r\n\r\nOUT = results\r\n",
+      "Engine": "PythonNet3",
+      "VariableInputPorts": true,
+      "Id": "d04dab53f87e482eb871cc4931f646d1",
+      "NodeType": "PythonScriptNode",
+      "Inputs": [
+        {
+          "Id": "d9f0fc4e3f11461d9138f428c3326fa0",
+          "Name": "IN[0]",
+          "Description": "Input #0",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "23666433bb174a8d91e03d8b8a6df993",
+          "Name": "OUT",
+          "Description": "Result of the python script",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Runs an embedded Python script."
+    },
+    {
+      "ConcreteType": "CoreNodeModels.Input.IntegerSlider, CoreNodeModels",
+      "NumberType": "Integer",
+      "MaximumValue": 20,
+      "MinimumValue": 0,
+      "StepValue": 1,
+      "Id": "1bed5fbaa2ff434ea3c47756a5de65fa",
+      "NodeType": "NumberInputNode",
+      "Inputs": [],
+      "Outputs": [
+        {
+          "Id": "c0c63bb3826641558b4eebfaca99bb57",
+          "Name": "",
+          "Description": "Int64",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Produces integer values",
+      "InputValue": 0
+    },
+    {
+      "ConcreteType": "CoreNodeModels.Watch, CoreNodeModels",
+      "WatchWidth": 325.0,
+      "WatchHeight": 218.0,
+      "Id": "e065b34acb1341e48d753a7fe27fcb4b",
+      "NodeType": "ExtensionNode",
+      "Inputs": [
+        {
+          "Id": "d9c40631784840aa85233406e4a6fae9",
+          "Name": "",
+          "Description": "Node to show output from",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "8dc30083cecd4d2099dcff1381257b18",
+          "Name": "",
+          "Description": "Node output",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Visualizes a node's output"
+    }
+  ],
+  "Connectors": [
+    {
+      "Start": "891d4cd17f174d97b6d0bf57e204e310",
+      "End": "63158c84f75744a3830454b4db2c294b",
+      "Id": "000fa8d2f14c40f1b02a6161c11f7110",
+      "IsHidden": "False"
+    },
+    {
+      "Start": "23666433bb174a8d91e03d8b8a6df993",
+      "End": "506aaa89cbbc4881abe356bdf6a1206d",
+      "Id": "5ced7726b3af4560b5ba4524decb6e6d",
+      "IsHidden": "False"
+    },
+    {
+      "Start": "23666433bb174a8d91e03d8b8a6df993",
+      "End": "d9c40631784840aa85233406e4a6fae9",
+      "Id": "f1277ff908084672b76d5e08034ae976",
+      "IsHidden": "False"
+    },
+    {
+      "Start": "c0c63bb3826641558b4eebfaca99bb57",
+      "End": "42d12e85eb50452fa01d5c271fca7541",
+      "Id": "a9df0c4f0ff14480b44316a79fafdcd9",
+      "IsHidden": "False"
+    }
+  ],
+  "Dependencies": [],
+  "NodeLibraryDependencies": [],
+  "EnableLegacyPolyCurveBehavior": false,
+  "Thumbnail": "",
+  "GraphDocumentationURL": null,
+  "ExtensionWorkspaceData": [
+    {
+      "ExtensionGuid": "28992e1d-abb9-417f-8b1b-05e053bee670",
+      "Name": "Properties",
+      "Version": "4.0",
+      "Data": {}
+    }
+  ],
+  "Author": "",
+  "Linting": {
+    "activeLinter": "None",
+    "activeLinterId": "7b75fb44-43fd-4631-a878-29f4d5d8399a",
+    "warningCount": 0,
+    "errorCount": 0
+  },
+  "Bindings": [],
+  "View": {
+    "Dynamo": {
+      "ScaleFactor": 10000.0,
+      "HasRunWithoutCrash": true,
+      "IsVisibleInDynamoLibrary": true,
+      "Version": "4.0.2.3852",
+      "RunType": "Manual",
+      "RunPeriod": "1000"
+    },
+    "Camera": {
+      "Name": "_Background Preview",
+      "EyeX": 10.6906099319458,
+      "EyeY": 2.473797082901001,
+      "EyeZ": -9.273640632629395,
+      "LookX": -2.569350242614746,
+      "LookY": -0.3730888366699219,
+      "LookZ": 1.720719337463379,
+      "UpX": 0.07963693886995316,
+      "UpY": 0.9953961968421936,
+      "UpZ": -0.0533335916697979
+    },
+    "ConnectorPins": [],
+    "NodeViews": [
+      {
+        "Id": "4f1114a3ec0742e3889136ba8f4aafec",
+        "Name": "Watch",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "ShowGeometry": true,
+        "X": 455.0907711094693,
+        "Y": 1835.0507900228592
+      },
+      {
+        "Id": "92ee08ab9ddf4355814fb528eb9b39f4",
+        "Name": "Python Script",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "ShowGeometry": true,
+        "X": 35.55226742998889,
+        "Y": 1692.3138816028309
+      },
+      {
+        "Id": "d04dab53f87e482eb871cc4931f646d1",
+        "Name": "Python Script",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "ShowGeometry": true,
+        "X": -820.9433586903192,
+        "Y": 1382.1436332291066
+      },
+      {
+        "Id": "1bed5fbaa2ff434ea3c47756a5de65fa",
+        "Name": "elige el estilo",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "ShowGeometry": true,
+        "X": -604.8363224171906,
+        "Y": 2108.939986525082
+      },
+      {
+        "Id": "e065b34acb1341e48d753a7fe27fcb4b",
+        "Name": "te muestra el estilo para elegirlo con precision",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "ShowGeometry": true,
+        "X": -628.89627635855,
+        "Y": 1750.8805148962394
+      }
+    ],
+    "Annotations": [],
+    "X": 448.94721052905754,
+    "Y": -665.6869893327591,
+    "Zoom": 0.492322611718621
+  }
+}

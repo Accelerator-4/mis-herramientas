@@ -1,0 +1,290 @@
+{
+  "Uuid": "9bd23360-1bf7-4852-ba6a-71aa8c3c4469",
+  "IsCustomNode": false,
+  "Description": "",
+  "Name": "RENUMERACION DE LAYOUTS",
+  "ElementResolver": {
+    "ResolutionMap": {}
+  },
+  "Inputs": [],
+  "Outputs": [],
+  "Nodes": [
+    {
+      "ConcreteType": "PythonNodeModels.PythonNode, PythonNodeModels",
+      "Code": "import clr\nclr.AddReference('AcMgd')\nclr.AddReference('AcDbMgd')\nfrom Autodesk.AutoCAD.ApplicationServices import Application\nfrom Autodesk.AutoCAD.DatabaseServices import *\nfrom Autodesk.AutoCAD.Runtime import *\nimport re\ndoc = Application.DocumentManager.MdiActiveDocument\ndb = doc.Database\nprefix = IN[0] if IN[0] is not None else None\nstart_number = int(IN[1]) if IN[1] is not None else 1\npadding = int(IN[2]) if IN[2] else 2\nclean_pattern = re.compile(r'^\\s*(?:[A-Za-z]{0,3}-)?\\d+\\s*[-_]\\s*', re.IGNORECASE)\nrenamed = []\nwith doc.LockDocument():\n    with db.TransactionManager.StartTransaction() as tr:\n        layout_dict = tr.GetObject(db.LayoutDictionaryId, OpenMode.ForRead)\n        layouts_in_order = []\n        for entry in layout_dict:\n            lid = entry.Value\n            lyt = tr.GetObject(lid, OpenMode.ForRead)\n            name = lyt.LayoutName\n            if name.lower() != \"model\":\n                layouts_in_order.append((lyt.TabOrder, name, lid))\n        layouts_in_order.sort(key=lambda x: x[0])\n        layout_names = [n for _, n, _ in layouts_in_order]\n        for idx, original in enumerate(layout_names):\n            new_number = start_number + idx\n            if prefix:\n                new_name = \"{0}-{1:0{2}d}\".format(prefix, new_number, padding)\n            elif prefix == \"\":\n                new_name = \"{1:0{2}d}\".format(prefix, new_number, padding)\n            else:\n                new_name = \"{0:0{1}d}\".format(new_number, padding)\n            block_id = layout_dict.GetAt(original)\n            lyt = tr.GetObject(block_id, OpenMode.ForWrite)\n            lyt.LayoutName = new_name\n            renamed.append(\"'{0}' -> '{1}'\".format(original, new_name))\n        tr.Commit()\nOUT = renamed",
+      "Engine": "PythonNet3",
+      "VariableInputPorts": true,
+      "Id": "2a5241b0ad684e3384f8318a1be983e8",
+      "NodeType": "PythonScriptNode",
+      "Inputs": [
+        {
+          "Id": "02af8dfd432346cfbdb0d0fca7188e56",
+          "Name": "IN[0]",
+          "Description": "Input #0",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        },
+        {
+          "Id": "d55c2f5a7a1341f6bf606ef491257e25",
+          "Name": "IN[1]",
+          "Description": "Input #1",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        },
+        {
+          "Id": "f6ecc8e31f99478bbd509c377f6e271b",
+          "Name": "IN[2]",
+          "Description": "Input #2",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "3d2fe53277c74e7c922a0018d4e2cf52",
+          "Name": "OUT",
+          "Description": "Result of the python script",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Runs an embedded Python script."
+    },
+    {
+      "ConcreteType": "CoreNodeModels.Input.StringInput, CoreNodeModels",
+      "SerializedWidth": 261.81369512315155,
+      "SerializedHeight": 34.0,
+      "Id": "9ad696b52fb344999ce287a319d42203",
+      "NodeType": "StringInputNode",
+      "Inputs": [],
+      "Outputs": [
+        {
+          "Id": "1198b756a3f743b0ba162b6411c3b20a",
+          "Name": "",
+          "Description": "String",
+          "UsingDefaultValue": true,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Creates a string.",
+      "InputValue": ""
+    },
+    {
+      "ConcreteType": "CoreNodeModels.Input.IntegerSlider, CoreNodeModels",
+      "NumberType": "Integer",
+      "MaximumValue": 100,
+      "MinimumValue": 1,
+      "StepValue": 1,
+      "Id": "4d87f801dccc4afbbf19a29a678f9c32",
+      "NodeType": "NumberInputNode",
+      "Inputs": [],
+      "Outputs": [
+        {
+          "Id": "0a3fb09341db4a50b84a31ad936d3e4f",
+          "Name": "",
+          "Description": "Int64",
+          "UsingDefaultValue": true,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Produces integer values",
+      "InputValue": 75
+    },
+    {
+      "ConcreteType": "CoreNodeModels.Input.IntegerSlider, CoreNodeModels",
+      "NumberType": "Integer",
+      "MaximumValue": 100,
+      "MinimumValue": 0,
+      "StepValue": 1,
+      "Id": "b03a3172d9004cc68796fc79195c40df",
+      "NodeType": "NumberInputNode",
+      "Inputs": [],
+      "Outputs": [
+        {
+          "Id": "9fe194b802404b98916ee385bf3cb2da",
+          "Name": "",
+          "Description": "Int64",
+          "UsingDefaultValue": true,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Produces integer values",
+      "InputValue": 2
+    },
+    {
+      "ConcreteType": "CoreNodeModels.Watch, CoreNodeModels",
+      "WatchWidth": 200.0,
+      "WatchHeight": 200.0,
+      "Id": "6acf7df5b19a4c5b9add62d67e8cc636",
+      "NodeType": "ExtensionNode",
+      "Inputs": [
+        {
+          "Id": "ca70240a03fd4df6a8cf76b892938d51",
+          "Name": "",
+          "Description": "Watch",
+          "UsingDefaultValue": true,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "b0496712dea74a949fa4e2c1386a13e4",
+          "Name": "",
+          "Description": "Watch result",
+          "UsingDefaultValue": true,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Visualizes a node's output"
+    }
+  ],
+  "Connectors": [
+    {
+      "Start": "3d2fe53277c74e7c922a0018d4e2cf52",
+      "End": "ca70240a03fd4df6a8cf76b892938d51",
+      "Id": "4e965ac6a5174fe1a79c7c17de33d42f",
+      "IsHidden": "False"
+    },
+    {
+      "Start": "1198b756a3f743b0ba162b6411c3b20a",
+      "End": "02af8dfd432346cfbdb0d0fca7188e56",
+      "Id": "13e62547b8b849dcbb296a7c64957aa8",
+      "IsHidden": "False"
+    },
+    {
+      "Start": "0a3fb09341db4a50b84a31ad936d3e4f",
+      "End": "d55c2f5a7a1341f6bf606ef491257e25",
+      "Id": "2a627216043e4cbe8bd7e98e3e7ecf7b",
+      "IsHidden": "False"
+    },
+    {
+      "Start": "9fe194b802404b98916ee385bf3cb2da",
+      "End": "f6ecc8e31f99478bbd509c377f6e271b",
+      "Id": "05d9f301ea3f4759a5275193b8036cbe",
+      "IsHidden": "False"
+    }
+  ],
+  "Dependencies": [],
+  "NodeLibraryDependencies": [],
+  "EnableLegacyPolyCurveBehavior": false,
+  "Thumbnail": "",
+  "GraphDocumentationURL": null,
+  "ExtensionWorkspaceData": [
+    {
+      "ExtensionGuid": "28992e1d-abb9-417f-8b1b-05e053bee670",
+      "Name": "Properties",
+      "Version": "4.0",
+      "Data": {}
+    }
+  ],
+  "Author": "",
+  "Linting": {
+    "activeLinter": "None",
+    "activeLinterId": "7b75fb44-43fd-4631-a878-29f4d5d8399a",
+    "warningCount": 0,
+    "errorCount": 0
+  },
+  "Bindings": [],
+  "View": {
+    "Dynamo": {
+      "ScaleFactor": 1.0,
+      "HasRunWithoutCrash": true,
+      "IsVisibleInDynamoLibrary": true,
+      "Version": "4.0.2.3852",
+      "RunType": "Manual",
+      "RunPeriod": "1000"
+    },
+    "Camera": {
+      "Name": "_Background Preview",
+      "EyeX": -7.271060943603516,
+      "EyeY": 10.110754013061523,
+      "EyeZ": 42.611019134521484,
+      "LookX": 9.631107330322266,
+      "LookY": -10.43370246887207,
+      "LookZ": -46.55036544799805,
+      "UpX": 0.0,
+      "UpY": 1.0,
+      "UpZ": 0.0
+    },
+    "ConnectorPins": [],
+    "NodeViews": [
+      {
+        "Id": "2a5241b0ad684e3384f8318a1be983e8",
+        "Name": "Python Script",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "ShowGeometry": true,
+        "X": 142.49111245867607,
+        "Y": -860.1316651923453
+      },
+      {
+        "Id": "9ad696b52fb344999ce287a319d42203",
+        "Name": "prefix",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "ShowGeometry": true,
+        "X": -305.9182922676157,
+        "Y": -218.32941857677474
+      },
+      {
+        "Id": "4d87f801dccc4afbbf19a29a678f9c32",
+        "Name": "startNumber",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "ShowGeometry": true,
+        "X": -316.7053634499105,
+        "Y": 19.24236602204138
+      },
+      {
+        "Id": "b03a3172d9004cc68796fc79195c40df",
+        "Name": "padding",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "ShowGeometry": true,
+        "X": -309.44468459680934,
+        "Y": 334.9240656687049
+      },
+      {
+        "Id": "6acf7df5b19a4c5b9add62d67e8cc636",
+        "Name": "Watch",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "ShowGeometry": true,
+        "X": 419.9585739309532,
+        "Y": -66.13046597248331
+      }
+    ],
+    "Annotations": [],
+    "X": 331.97289416496506,
+    "Y": 261.61986115094334,
+    "Zoom": 0.5817085341530186
+  }
+}

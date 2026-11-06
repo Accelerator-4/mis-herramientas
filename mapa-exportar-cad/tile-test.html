@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Tile test</title>
+<style>
+  body { font-family: Consolas, monospace; margin: 16px; background: #f4f6f8; color: #1c2733; }
+  h1 { font-size: 16px; }
+  .test { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; background: #fff; border: 1px solid #e2e6ea; border-radius: 8px; padding: 10px; }
+  .test img { width: 128px; height: 128px; border: 1px solid #ccc; background: #eee; }
+  .meta { font-size: 12px; color: #6b7683; }
+  .ok { color: #0a7a2f; font-weight: bold; }
+  .bad { color: #c0392b; font-weight: bold; }
+  .url { word-break: break-all; font-size: 11px; }
+</style>
+</head>
+<body>
+<h1>Prueba de tiles — copiar las 4 líneas de resultado aquí</h1>
+<p class="meta" id="env"></p>
+
+<div class="test">
+  <img id="i1">
+  <div><div id="s1">Cargando...</div><div class="url" id="u1"></div></div>
+</div>
+<div class="test">
+  <img id="i2">
+  <div><div id="s2">Cargando...</div><div class="url" id="u2"></div></div>
+</div>
+<div class="test">
+  <img id="i3">
+  <div><div id="s3">Cargando...</div><div class="url" id="u3"></div></div>
+</div>
+<div class="test">
+  <img id="i4">
+  <div><div id="s4">Cargando...</div><div class="url" id="u4"></div></div>
+</div>
+
+<script>
+document.getElementById('env').textContent =
+  'Página: ' + location.href +
+  ' | Origen: ' + location.origin +
+  ' | UA: ' + navigator.userAgent;
+
+function test(id, url) {
+  var img = document.getElementById('i' + id);
+  var st = document.getElementById('s' + id);
+  var ul = document.getElementById('u' + id);
+  ul.textContent = url;
+  img.onload = function () { st.textContent = 'OK cargada'; st.className = 'ok'; };
+  img.onerror = function () { st.textContent = 'FALLÓ (error en red/cache)'; st.className = 'bad'; };
+  img.src = url;
+}
+
+test(1, 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/8/55/88');
+test(2, 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/8/55/88');
+test(3, 'https://a.tile.openstreetmap.de/tiles/osmde/8/88/55.png');
+test(4, 'https://a.tile.openstreetmap.fr/hot/8/88/55.png');
+</script>
+</body>
+</html>

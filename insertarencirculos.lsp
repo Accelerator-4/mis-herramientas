@@ -1,0 +1,18 @@
+(defun c:InsertarEnCirculos ( / blkName ss i ent cpt)
+  (setq blkName (getstring "\nNombre del bloque: "))
+  (setq ss (ssget "X" '((0 . "CIRCLE"))))
+  (if ss
+    (progn
+      (setq i 0)
+      (while (< i (sslength ss))
+        (setq ent (ssname ss i))
+        (setq cpt (cdr (assoc 10 (entget ent))))
+        (command "._INSERT" blkName cpt 1 1 0)
+        (setq i (1+ i))
+      )
+      (princ (strcat "\nBloques insertados: " (itoa i)))
+    )
+    (princ "\nNo se encontraron círculos.")
+  )
+  (princ)
+)
