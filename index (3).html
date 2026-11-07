@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mi caja de herramientas (CAD / BIM / scripts)</title>
+<style>
+  :root{
+    --bg:#0f1620; --card:#17212e; --card2:#1d2a3a; --line:#2a3b4f;
+    --txt:#e8eef5; --muted:#8aa0b5; --acc:#36b37e; --acc2:#2a8f63;
+    --blue:#4a9eff; --chip:#223042;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'Segoe UI',system-ui,-apple-system,sans-serif;background:var(--bg);color:var(--txt);line-height:1.5}
+  .wrap{max-width:1040px;margin:0 auto;padding:28px 18px 60px}
+  header{text-align:center;padding:26px 0 14px}
+  header h1{font-size:30px;letter-spacing:.5px}
+  header h1 .pen{color:var(--acc)}
+  header p{color:var(--muted);margin-top:8px;font-size:15px}
+  .bar{display:flex;gap:12px;flex-wrap:wrap;align-items:center;margin:22px 0 6px}
+  .search{flex:1;min-width:220px;position:relative}
+  .search input{width:100%;padding:12px 14px 12px 40px;border-radius:10px;border:1px solid var(--line);
+    background:var(--card);color:var(--txt);font-size:15px;outline:none}
+  .search input:focus{border-color:var(--acc)}
+  .search .ico{position:absolute;left:13px;top:50%;transform:translateY(-50%);color:var(--muted)}
+  .count{color:var(--muted);font-size:14px;white-space:nowrap}
+  .chips{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0 2px}
+  .chip{background:var(--chip);color:var(--muted);border:1px solid var(--line);padding:6px 13px;
+    border-radius:20px;font-size:13px;cursor:pointer;transition:.12s;user-select:none}
+  .chip:hover{border-color:var(--acc)}
+  .chip.on{background:var(--acc);color:#07140d;border-color:var(--acc);font-weight:600}
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(290px,1fr));gap:14px;margin-top:16px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px 16px 14px;
+    display:flex;flex-direction:column;transition:.15s;position:relative;overflow:hidden}
+  .card:hover{border-color:var(--acc);transform:translateY(-2px)}
+  .card .top{display:flex;align-items:center;gap:9px}
+  .card . emoji{font-size:22px}
+  .card .name{font-size:17px;font-weight:600;word-break:break-word;flex:1}
+  .card .badge{font-size:11px;font-weight:700;padding:3px 8px;border-radius:6px;white-space:nowrap}
+  .card .folder{display:inline-block;margin-top:8px;font-size:12px;color:var(--muted);
+    background:var(--chip);padding:3px 9px;border-radius:20px;align-self:flex-start}
+  .card .actions{display:flex;gap:8px;margin-top:14px}
+  .btn{flex:1;text-align:center;padding:9px 10px;border-radius:9px;font-size:14px;font-weight:600;
+    cursor:pointer;border:none;text-decoration:none;display:inline-block;transition:.12s}
+  .btn-dl{background:var(--acc);color:#07140d}
+  .btn-dl:hover{background:var(--acc2);color:#fff}
+  .btn-info{background:transparent;color:var(--blue);border:1px solid var(--line)}
+  .btn-info:hover{border-color:var(--blue)}
+  .msg{text-align:center;padding:40px 20px;color:var(--muted);font-size:15px}
+  .msg.err{color:#ff8f8f}
+  .setup{background:var(--card2);border:1px dashed var(--line);border-radius:14px;padding:22px;margin-top:20px}
+  .setup h3{color:var(--acc);margin-bottom:10px}
+  .setup code{background:#0b1118;padding:2px 7px;border-radius:5px;color:#ffd479;font-size:13.5px}
+  .setup ol{margin:10px 0 0 20px;color:var(--muted);font-size:14.5px}
+  .setup li{margin:7px 0}
+  footer{text-align:center;color:var(--muted);font-size:13px;margin-top:40px;line-height:1.8}
+  .spin{display:inline-block;width:22px;height:22px;border:3px solid var(--line);
+    border-top-color:var(--acc);border-radius:50%;animation:sp 1s linear infinite;vertical-align:middle}
+  @keyframes sp{to{transform:rotate(360deg)}}
+  details.hdr{margin-top:10px}
+  details.hdr summary{cursor:pointer;color:var(--blue);font-size:13px;list-style:none}
+  details.hdr pre{margin-top:8px;background:#0b1118;border:1px solid var(--line);border-radius:8px;
+    padding:10px;font-size:11.5px;color:var(--muted);max-height:220px;overflow:auto;white-space:pre-wrap}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1><span class="pen">&#128736;</span> Mi caja de herramientas</h1>
+    <p>Mis LSP de AutoCAD, scripts de Dynamo y dem&aacute;s c&oacute;digo, siempre a la mano.</p>
+  </header>
+
+  <div class="bar">
+    <div class="search">
+      <span class="ico">&#128269;</span>
+      <input id="q" type="text" placeholder="Buscar (ej: ROTAA, tabla, dynamo, zona...)" autocomplete="off">
+    </div>
+    <div class="count" id="count"></div>
+  </div>
+  <div class="chips" id="chips"></div>
+
+  <div id="grid" class="grid"></div>
+  <div id="state" class="msg"><span class="spin"></span>&nbsp; Cargando tus herramientas...</div>
+
+  <footer>
+    Cat&aacute;logo autom&aacute;tico &mdash; se actualiza solo cuando subes archivos nuevos al repositorio.<br>
+    Hecho para abrirse desde cualquier computadora. No necesitas instalar nada.
+  </footer>
+</div>
+
+<script>
+/* =====================================================================
+   >>> UNICO LUGAR QUE DEBES EDITAR <<<
+   Pon aqui tu usuario de GitHub y el nombre de tu repositorio.
+   ===================================================================== */
+const USUARIO     = "Accelerator-4";        // <-- tu usuario de GitHub
+const REPOSITORIO = "mis-herramientas";     // <-- nombre de tu repositorio
+const RAMA        = "main";                // normalmente "main"
+/* ===================================================================== */
+
+/* Archivos que NO queremos listar (son parte del catalogo, no herramientas) */
+const IGNORAR = ["index.html", "guia-paso-a-paso.html", "readme.md", "license", ".gitignore"];
+
+/* Tipos conocidos: extension -> [etiqueta, emoji, color] */
+const TIPOS = {
+  "lsp":  ["AutoLISP",  "\u270F\uFE0F", "#36b37e"],
+  "dcl":  ["Dialogo",   "\uD83E\uDE9F", "#36b37e"],
+  "dyn":  ["Dynamo",    "\uD83D\uDD37", "#4a9eff"],
+  "dyf":  ["Dynamo",    "\uD83D\uDD37", "#4a9eff"],
+  "py":   ["Python",    "\uD83D\uDC0D", "#ffd479"],
+  "cs":   ["C#",        "\u0023\uFE0F", "#b084f5"],
+  "net":  [".NET",      "\u2699\uFE0F", "#b084f5"],
+  "vlx":  ["LISP comp.","\uD83D\uDCE6", "#36b37e"],
+  "fas":  ["LISP comp.","\uD83D\uDCE6", "#36b37e"],
+  "scr":  ["Script CAD","\uD83D\uDCDC", "#36b37e"],
+  "js":   ["JavaScript","\uD83D\uDFE8", "#ffd479"],
+  "json": ["JSON",      "\uD83D\uDDC2\uFE0F", "#8aa0b5"],
+  "txt":  ["Texto",     "\uD83D\uDCC4", "#8aa0b5"],
+  "md":   ["Nota",      "\uD83D\uDCDD", "#8aa0b5"],
+  "zip":  ["Paquete",   "\uD83D\uDDDC\uFE0F", "#8aa0b5"]
+};
+function tipoDe(nombre){
+  const m = nombre.toLowerCase().match(/\.([a-z0-9]+)$/);
+  const ext = m ? m[1] : "";
+  const info = TIPOS[ext] || ["Archivo", "\uD83D\uDCCE", "#8aa0b5"];
+  return { ext: ext, etiqueta: info[0], emoji: info[1], color: info[2] };
+}
+/* extensiones de texto cuya cabecera (comentarios) podemos mostrar */
+const TEXTO_VER = ["lsp","dcl","py","cs","js","scr","txt","md"];
+
+const elGrid  = document.getElementById("grid");
+const elState = document.getElementById("state");
+const elCount = document.getElementById("count");
+const elChips = document.getElementById("chips");
+const elQ     = document.getElementById("q");
+let items = [];
+let filtroTipo = "*";
+
+function esPlaceholder(){ return USUARIO === "TU-USUARIO-GITHUB"; }
+
+function mostrarSetup(extra){
+  elState.innerHTML = "";
+  const box = document.createElement("div");
+  box.className = "setup";
+  const h = document.createElement("h3");
+  h.textContent = "\u2699\uFE0F Falta un pasito de configuracion";
+  box.appendChild(h);
+  const p = document.createElement("p");
+  p.style.color = "var(--muted)"; p.style.fontSize = "14.5px";
+  p.textContent = extra || "Abre este archivo (index.html) con el Bloc de notas y escribe tu usuario de GitHub y el nombre del repositorio en la parte de arriba marcada con flechas.";
+  box.appendChild(p);
+  const ol = document.createElement("ol");
+  [
+    'Busca la linea USUARIO = "TU-USUARIO-GITHUB"',
+    "Reemplaza TU-USUARIO-GITHUB por tu usuario real de GitHub.",
+    "Revisa que REPOSITORIO tenga el nombre exacto de tu repositorio.",
+    "Guarda el archivo, subelo de nuevo y recarga la pagina."
+  ].forEach(t=>{ const li=document.createElement("li"); li.textContent=t; ol.appendChild(li); });
+  box.appendChild(ol);
+  elState.appendChild(box);
+}
+
+function pintarChips(){
+  const tipos = {};
+  items.forEach(it=>{ tipos[it.etiqueta] = (tipos[it.etiqueta]||0)+1; });
+  elChips.innerHTML = "";
+  const todos = document.createElement("div");
+  todos.className = "chip" + (filtroTipo==="*" ? " on" : "");
+  todos.textContent = "Todos (" + items.length + ")";
+  todos.addEventListener("click", ()=>{ filtroTipo="*"; pintarChips(); aplicar(); });
+  elChips.appendChild(todos);
+  Object.keys(tipos).sort().forEach(et=>{
+    const c = document.createElement("div");
+    c.className = "chip" + (filtroTipo===et ? " on" : "");
+    c.textContent = et + " (" + tipos[et] + ")";
+    c.addEventListener("click", ()=>{ filtroTipo = (filtroTipo===et?"*":et); pintarChips(); aplicar(); });
+    elChips.appendChild(c);
+  });
+}
+
+function render(lista){
+  elGrid.innerHTML = "";
+  if(lista.length === 0){
+    elCount.textContent = "";
+    elState.className = "msg";
+    elState.textContent = "No se encontraron herramientas con ese criterio.";
+    return;
+  }
+  elState.textContent = "";
+  elCount.textContent = lista.length + (lista.length===1 ? " herramienta" : " herramientas");
+  lista.forEach(f=>{
+    const card = document.createElement("div");
+    card.className = "card";
+
+    const top = document.createElement("div");
+    top.className = "top";
+    const em = document.createElement("span");
+    em.className = "emoji"; em.textContent = f.emoji; top.appendChild(em);
+    const name = document.createElement("div");
+    name.className = "name"; name.textContent = f.nombre; top.appendChild(name);
+    const badge = document.createElement("span");
+    badge.className = "badge"; badge.textContent = f.etiqueta;
+    badge.style.color = f.color; badge.style.background = "rgba(255,255,255,.06)";
+    top.appendChild(badge);
+    card.appendChild(top);
+
+    if(f.carpeta){
+      const fo = document.createElement("span");
+      fo.className = "folder"; fo.textContent = "\uD83D\uDCC1 " + f.carpeta;
+      card.appendChild(fo);
+    }
+
+    const actions = document.createElement("div");
+    actions.className = "actions";
+    const dl = document.createElement("a");
+    dl.className = "btn btn-dl"; dl.textContent = "\u2B07\uFE0F Descargar";
+    dl.href = f.raw; dl.setAttribute("download", f.nombre);
+    actions.appendChild(dl);
+
+    if(TEXTO_VER.indexOf(f.ext) !== -1){
+      const info = document.createElement("button");
+      info.className = "btn btn-info"; info.textContent = "\uD83D\uDC41\uFE0F Ver"; info.type = "button";
+      actions.appendChild(info);
+      const det = document.createElement("details"); det.className = "hdr";
+      const sum = document.createElement("summary"); sum.textContent = "Descripcion / cabecera"; det.appendChild(sum);
+      const pre = document.createElement("pre"); pre.textContent = "(haz clic en Ver)"; det.appendChild(pre);
+      card.appendChild(actions); card.appendChild(det);
+      let cargado = false;
+      info.addEventListener("click", function(){
+        det.open = true;
+        if(cargado) return; cargado = true;
+        pre.textContent = "Cargando...";
+        fetch(f.raw).then(r=>r.text()).then(txt=>{
+          pre.textContent = extraerCabecera(txt, f.ext) || "(Sin comentarios de cabecera.)";
+        }).catch(()=>{ pre.textContent = "No se pudo cargar la descripcion."; });
+      });
+    } else {
+      card.appendChild(actions);
+    }
+    elGrid.appendChild(card);
+  });
+}
+
+/* Toma las primeras lineas de comentario como descripcion, segun el tipo */
+function extraerCabecera(txt, ext){
+  const lineas = txt.split(/\r?\n/);
+  const out = [];
+  let marcas;
+  if(ext==="lsp"||ext==="dcl"||ext==="scr") marcas=[";"];
+  else if(ext==="py") marcas=["#"];
+  else if(ext==="cs"||ext==="js") marcas=["//"];
+  else marcas=[];
+  let empezo=false;
+  for(let i=0;i<lineas.length && out.length<40;i++){
+    const t = lineas[i].trim();
+    const esCom = marcas.some(m=>t.startsWith(m));
+    if(esCom){
+      empezo=true;
+      let limpio=t;
+      marcas.forEach(m=>{ limpio = limpio.replace(new RegExp("^["+m.replace(/[.*+?^${}()|[\]\\]/g,"\\$&")+"]+"),""); });
+      limpio = limpio.replace(/=+$/,"").trim();
+      if(limpio) out.push(limpio);
+    } else if(empezo && t===""){ continue; }
+    else if(empezo){ break; }
+    else if(ext==="md"){ out.push(t); if(out.length>=20) break; }
+  }
+  return out.join("\n");
+}
+
+function aplicar(){
+  const q = elQ.value.trim().toLowerCase();
+  let lista = items;
+  if(filtroTipo !== "*") lista = lista.filter(f=>f.etiqueta===filtroTipo);
+  if(q) lista = lista.filter(f=>
+    f.nombre.toLowerCase().includes(q) || (f.carpeta && f.carpeta.toLowerCase().includes(q)));
+  render(lista);
+}
+elQ.addEventListener("input", aplicar);
+
+function cargar(){
+  if(esPlaceholder()){ mostrarSetup(); return; }
+  const api = "https://api.github.com/repos/" + encodeURIComponent(USUARIO) +
+              "/" + encodeURIComponent(REPOSITORIO) +
+              "/git/trees/" + encodeURIComponent(RAMA) + "?recursive=1";
+  fetch(api).then(r=>{ if(!r.ok) throw new Error(r.status); return r.json(); })
+  .then(data=>{
+    if(!data.tree) throw new Error("sin arbol");
+    items = data.tree.filter(it=>{
+      if(it.type!=="blob") return false;
+      const base = it.path.split("/").pop().toLowerCase();
+      return IGNORAR.indexOf(base) === -1;
+    }).map(it=>{
+      const partes = it.path.split("/");
+      const nombre = partes.pop();
+      const t = tipoDe(nombre);
+      return {
+        nombre: nombre, carpeta: partes.join(" / "),
+        ext: t.ext, etiqueta: t.etiqueta, emoji: t.emoji, color: t.color,
+        raw: "https://raw.githubusercontent.com/"+USUARIO+"/"+REPOSITORIO+"/"+RAMA+"/"+it.path
+      };
+    }).sort((a,b)=> a.etiqueta.localeCompare(b.etiqueta) || a.nombre.localeCompare(b.nombre));
+    if(items.length === 0){
+      elState.className="msg";
+      elState.textContent="El repositorio existe pero aun no tiene archivos. Sube tus herramientas y recarga.";
+      return;
+    }
+    pintarChips(); aplicar();
+  }).catch(err=>{
+    elState.className="msg err";
+    if(String(err.message)==="404") mostrarSetup("No encontre el repositorio. Revisa que el usuario y el nombre esten bien escritos y que sea publico.");
+    else if(String(err.message)==="403") elState.textContent="GitHub pidio esperar un momento (limite de consultas). Espera 1 minuto y recarga.";
+    else mostrarSetup("No pude conectar con GitHub. Revisa tu internet y los datos de usuario/repositorio.");
+  });
+}
+cargar();
+</script>
+</body>
+</html>
